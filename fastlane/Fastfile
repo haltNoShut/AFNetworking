@@ -23,6 +23,83 @@ before_all do
   # ENV["SLACK_URL"] = "https://hooks.slack.com/services/..."
 end
 
+lane :prepare_release do |options|
+  if !options[:version]
+    raise "No version specified!".red
+  end
+  
+  if options[:allow_branch]
+    allowed_branch = options[:allow_branch]
+  elsif ENV["DEPLOY_BRANCH"]
+    allowed_branch = ENV["DEPLOY_BRANCH"]
+  else 
+    allowed_branch = "master"
+  end
+  
+  ensure_git_branch(
+    branch:allowed_branch
+  )
+  
+  if options[:skip_plist_update] != true
+    if options[:plist_path]
+      plist_path = options[:plist_path]
+    elsif ENV["DEPLOY_PLIST_PATH"]
+      plist_path = ENV["DEPLOY_PLIST_PATH"]
+    else 
+      raise "No plist path specified. Use 'plist_path:'".red
+    end
+  
+    set_info_plist_value(
+      path: plist_path,
+      key: "CFBundleVersion",
+      value: options[:version]
+    )
+  end
+
+  if options[:skip_podspec_update] != true
+    if options[:podspec]
+      podspec = options[:podpsec]
+    elsif ENV["DEPLOY_PODSPEC"]
+      podspec = ENV["DEPLOY_PODSPEC"]
+    else 
+      raise "No podspec path specified. Use 'podspec:'".red
+    end
+  
+    update_podspec_version(
+      podspec_file_path: podspec,
+      version: options[:version]
+    )
+  end
+
+  if options[:skip_changelog] != true
+    generate_github_milestone_changelog(
+      github_organization: "AFNetworking",
+      github_repository: "AFNetworking",
+      milestone: options[:version],
+      changelog_file_path: "CHANGELOG.md"
+    )
+  end
+
+  if options[:remote]
+    remote = options[:remote]
+  elsif ENV["DEPLOY_REMOTE"]
+    remote = ENV["DEPLOY_REMOTE"]
+  else 
+    remote = "origin"
+  end
+
+  if prompt(text: "#{options[:version]} has been prepped for release. Would you like to commit and push the branch to #{remote}?".green, boolean: true,ci_input:"y")
+    
+    git_commit(
+      path: ".",
+      message: "Preparing for the #{options[:version]} release"
+    )
+
+    push_to_git_remote(
+      remote: remote
+    )
+  end
+end
 
 lane :travis_commit do |options|
   if options[:configuration]
