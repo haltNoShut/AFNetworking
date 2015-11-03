@@ -65,10 +65,11 @@ lane :prepare_release do |options|
       raise "No podspec path specified. Use 'podspec:'".red
     end
   
-    update_podspec_version(
-      podspec_file_path: podspec,
-      version: options[:version]
+    version_bump_podspec(
+    path: podspec,
+    version_number: options[:version]
     )
+    
   end
 
   if options[:skip_changelog] != true
