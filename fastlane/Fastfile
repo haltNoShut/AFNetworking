@@ -1,0 +1,82 @@
+# Customise this file, documentation can be found here:
+# https://github.com/KrauseFx/fastlane/tree/master/docs
+# All available actions: https://github.com/KrauseFx/fastlane/blob/master/docs/Actions.md
+# can also be listed using the `fastlane actions` command
+
+# Change the syntax highlighting to Ruby
+# All lines starting with a # are ignored when running `fastlane`
+
+# By default, fastlane will send which actions are used
+# No personal data is shared, more information on https://github.com/fastlane/enhancer
+# Uncomment the following line to opt out
+# opt_out_usage
+
+# If you want to automatically update fastlane if a new version is available:
+# update_fastlane
+
+# This is the minimum version number required.
+# Update this, if you use features of a newer version
+fastlane_version "1.37.0"
+
+
+before_all do
+  # ENV["SLACK_URL"] = "https://hooks.slack.com/services/..."
+end
+
+
+lane :travis_commit do |options|
+  if options[:configuration]
+    configuration = options[:configuration]
+  elsif ENV["AF_CONFIGURATION"]
+    configuration = ENV["AF_CONFIGURATION"]
+  else
+    configuration = "Release"
+  end
+  
+  test_framework(configuration: configuration)
+  
+  build_example(configuration: configuration)
+
+  sh("pod spec lint --quick ../")
+end
+
+desc "Runs all the tests"
+lane :test_framework do |options|
+  scan(
+    configuration: options[:configuration]
+  )
+  
+end
+
+desc "Builds the example"
+lane :build_example do |options|
+  
+  xcodebuild(
+    workspace: ENV["EXAMPLE_WORKSPACE"],
+    scheme: ENV["EXAMPLE_SCHEME"],
+    build: true,
+    destination: ENV["EXAMPLE_DESTINATION"],
+    configuration: options[:configuration],
+    build_settings: [["ONLY_ACTIVE_ARCH", "NO"]] 
+  )
+end
+
+# You can define as many lanes as you want
+
+after_all do |lane|
+  # This block is called, only if the executed lane was successful
+  
+  # slack(
+  #   message: "Successfully deployed new App Update."
+  # )
+end
+
+error do |lane, exception|
+  # slack(
+  #   message: exception.message,
+  #   success: false
+  # )
+end
+
+# More information about multiple platforms in fastlane: https://github.com/KrauseFx/fastlane/blob/master/docs/Platforms.md
+# All available actions: https://github.com/KrauseFx/fastlane/blob/master/docs/Actions.md
