@@ -28,6 +28,14 @@ lane :prepare_release do |options|
     raise "No version specified!".red
   end
   
+  if options[:remote]
+    remote = options[:remote]
+  elsif ENV["DEPLOY_REMOTE"]
+    remote = ENV["DEPLOY_REMOTE"]
+  else 
+    remote = "origin"
+  end
+  
   if options[:allow_branch]
     allowed_branch = options[:allow_branch]
   elsif ENV["DEPLOY_BRANCH"]
@@ -36,10 +44,17 @@ lane :prepare_release do |options|
     allowed_branch = "master"
   end
   
+  #Ensure we are on the right branch
   ensure_git_branch(
     branch:allowed_branch
   )
   
+  #Pull the latest to ensure we are up to date
+  if options[:skip_git_pull] != true
+    sh("git pull #{remote} #{allowed_branch}")
+  end
+  
+  #Update the framework plist
   if options[:skip_plist_update] != true
     if options[:plist_path]
       plist_path = options[:plist_path]
@@ -56,6 +71,7 @@ lane :prepare_release do |options|
     )
   end
 
+  #Update the podspec
   if options[:skip_podspec_update] != true
     if options[:podspec]
       podspec = options[:podpsec]
@@ -72,6 +88,7 @@ lane :prepare_release do |options|
     
   end
 
+  #Generate a Changelog
   if options[:skip_changelog] != true
     generate_github_milestone_changelog(
       github_organization: "AFNetworking",
@@ -79,14 +96,6 @@ lane :prepare_release do |options|
       milestone: options[:version],
       changelog_file_path: "CHANGELOG.md"
     )
-  end
-
-  if options[:remote]
-    remote = options[:remote]
-  elsif ENV["DEPLOY_REMOTE"]
-    remote = ENV["DEPLOY_REMOTE"]
-  else 
-    remote = "origin"
   end
 
   if prompt(text: "#{options[:version]} has been prepped for release. Would you like to commit and push the branch to #{remote}?".green, boolean: true,ci_input:"y")
