@@ -113,8 +113,15 @@ lane :prepare_release do |options|
     push_to_git_remote(
       remote: remote
     )
+    
+    if prompt(text: "#{options[:version]} is pushed, and is now ready for release. Would you like to tag and finalize the release?".green, boolean: true, ci_input:"y")
+      complete_release options
+    else
+      puts "OK. Run the `complete_release` lane when you are ready"
+    end
+    
   else 
-    puts "OK. Make more additional changes and commit them, then run the `complete_release` lane."
+    puts "OK. Make more additional changes and commit them, then run the `complete_release` lane"
   end
 end
 
@@ -174,7 +181,7 @@ lane :complete_release do |options|
   # Create a release
     #* Upload Notes
     #* Upload Carthage Asset
-  if options[:skip_github_releaes] != true
+  if options[:skip_github_release] != true
     set_github_release(
       respository_name:"#{ENV["DEPLOY_GITHUB_ORGANIZATION"]}/#{ENV["DEPLOY_GITHUB_REPOSITORY"]}",
       api_token:params[:api_token],
