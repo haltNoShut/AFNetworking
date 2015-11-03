@@ -28,6 +28,11 @@ lane :prepare_release do |options|
     raise "No version specified!".red
   end
   
+  #Ensure the branch is clean
+  if options[:allow_dirty_branch] != true
+    ensure_git_status_clean
+  end
+  
   if options[:remote]
     remote = options[:remote]
   elsif ENV["DEPLOY_REMOTE"]
@@ -91,10 +96,10 @@ lane :prepare_release do |options|
   #Generate a Changelog
   if options[:skip_changelog] != true
     generate_github_milestone_changelog(
-      github_organization: "AFNetworking",
-      github_repository: "AFNetworking",
+      github_organization: ENV["DEPLOY_GITHUB_ORGANIZATION"],
+      github_repository: ENV["DEPLOY_GITHUB_REPOSITORY"],
       milestone: options[:version],
-      changelog_file_path: "CHANGELOG.md"
+      changelog_file_path: ENV["DEPLOY_CHANGELOG_PATH"]
     )
   end
 
@@ -108,7 +113,76 @@ lane :prepare_release do |options|
     push_to_git_remote(
       remote: remote
     )
+  else 
+    puts "OK. Make more additional changes and commit them, then run the `complete_release` lane."
   end
+end
+
+lane :complete_release do |options|
+  if !options[:version]
+    raise "No version specified!".red
+  end
+  
+  #Ensure clean branch
+  if options[:allow_dirty_branch] != true
+    ensure_git_status_clean
+  end
+  
+  if options[:remote]
+    remote = options[:remote]
+  elsif ENV["DEPLOY_REMOTE"]
+    remote = ENV["DEPLOY_REMOTE"]
+  else 
+    remote = "origin"
+  end
+  
+  if options[:allow_branch]
+    allowed_branch = options[:allow_branch]
+  elsif ENV["DEPLOY_BRANCH"]
+    allowed_branch = ENV["DEPLOY_BRANCH"]
+  else 
+    allowed_branch = "master"
+  end
+  
+  #Ensure we are on the right branch
+  ensure_git_branch(
+    branch:allowed_branch
+  )
+  
+  #Pull the latest to ensure we are up to date
+  if options[:skip_git_pull] != true
+    sh("git pull #{remote} #{allowed_branch}")
+  end
+
+  # tag the repo  
+  add_git_tag(
+    tag: "-a #{options[:version]}"
+  )
+  
+  # generate the carthage zip
+  if options[:skip_carthage_framework] != true
+    build_carthage_frameworks()
+  end
+  
+  # push the tag
+  if options [:skip_push_tags] != true
+    push_git_tags_to_remote(
+      remote: remote
+    )
+  end
+  
+  # Create a release
+    #* Upload Notes
+    #* Upload Carthage Asset
+  if options[:skip_github_releaes] != true
+    set_github_release(
+      respository_name:"#{ENV["DEPLOY_GITHUB_ORGANIZATION"]}/#{ENV["DEPLOY_GITHUB_REPOSITORY"]}",
+      api_token:params[:api_token],
+      tag_name:params[:version],
+    )
+  end
+    
+    #pod trunk push
 end
 
 lane :travis_commit do |options|
