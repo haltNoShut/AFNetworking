@@ -44,9 +44,6 @@ module Fastlane
       end
 
       def self.available_options
-        # Define all options your action supports. 
-        
-        # Below a few examples
         [
                     FastlaneCore::ConfigItem.new(key: :path,
                                                  description: "The Podspec you want to lint",

@@ -20,11 +20,6 @@ module Fastlane
         return changelog
       end
       
-      def self.replace(filepath, regexp, *args, &block)
-        content = File.read(filepath).gsub(regexp, *args, &block)
-        File.open(filepath, 'wb') { |file| file.write(content) }
-      end
-      
       def self.run(params)
         require 'net/http'
         require 'fileutils'
@@ -67,23 +62,18 @@ module Fastlane
           sections << {section: section_label, items: items}
         end
         
+        
         date = DateTime.now
-        changelog = "\n##[#{params[:milestone]}](https://github.com/#{params[:github_organization]}/#{params[:github_repository]}/releases/tag/#{params[:milestone]}) (#{date.strftime("%m/%d/%Y")})"
-        changelog << "\nReleased on #{date.strftime("%A, %B %d, %Y")}. All issues associated with this milestone can be found using this [filter](https://github.com/#{params[:github_organization]}/#{params[:github_repository]}/issues?q=milestone%3A#{params[:milestone]}+is%3Aclosed).\n"
+        result[:header] = "\n\n##[#{params[:milestone]}](https://github.com/#{params[:github_organization]}/#{params[:github_repository]}/releases/tag/#{params[:milestone]}) (#{date.strftime("%m/%d/%Y")})"
+        result[:header] << "\nReleased on #{date.strftime("%A, %B %d, %Y")}. All issues associated with this milestone can be found using this [filter](https://github.com/#{params[:github_organization]}/#{params[:github_repository]}/issues?q=milestone%3A#{params[:milestone]}+is%3Aclosed)."
+        
+        result[:changelog] = "\n"
         sections.each do |section|
-          changelog << markdown_for_changelog_section(section[:section], section[:items])
+          result[:changelog] << markdown_for_changelog_section(section[:section], section[:items])
         end
-        Actions.lane_context[SharedValues::GITHUB_MILESTONE_CHANGELOG] = changelog
+        Actions.lane_context[SharedValues::GITHUB_MILESTONE_CHANGELOG] = result
         
-        if params[:changelog_file_path]
-          replace(params[:changelog_file_path], /^#{params[:changelog_file_delimiter]}/mi) do |match| 
-            "#{match} #{changelog}"
-          end
-          Helper.log.info "#{params[:changelog_file_path]} has been updated for #{params[:milestone]}".green
-          
-        end
-        
-        return changelog
+        return result
       end
 
       #####################################################
@@ -137,31 +127,18 @@ module Fastlane
                                        env_name: "FL_GENERATE_GITHUB_MILESTONE_CHANGELOG_REMOVED_LABEL_NAME",
                                        description: "Github label name for all removed added during this milestone",
                                        is_string: true,
-                                       default_value: "Removed"),
-          FastlaneCore::ConfigItem.new(key: :changelog_file_path,
-                                       env_name: "FL_GENERATE_GITHUB_MILESTONE_CHANGELOG_FILE_PATH",
-                                       description: "Path for the changelog",
-                                       is_string: true,
-                                       optional: true,
-                                       verify_block: proc do |value|
-                                         raise "Couldn't find file at path '#{value}'".red unless File.exist?(value)
-                                       end),
-          FastlaneCore::ConfigItem.new(key: :changelog_file_delimiter,
-                                       env_name: "FL_GENERATE_GITHUB_MILESTONE_CHANGELOG_FILE_DELIMITER",
-                                       description: "The delimiter indicating where to insert the changelog for the milestone in the changelog file",
-                                       is_string: true,
-                                       default_value: "---")                                         
+                                       default_value: "Removed")                                      
         ]
       end
 
       def self.output
         [
-          ['GITHUB_MILESTONE_CHANGELOG', 'The formatted markdown changelog']
+          ['GITHUB_MILESTONE_CHANGELOG', 'A hash containing a well formatted :header, and the :changelog itself']
         ]
       end
 
       def self.return_value
-        "Returns a markdown formatted change log to be added to CHANGELOG.md"
+        "Returns a hash containing a well formatted :header, and the :changelog itself, both in markdown"
       end
 
       def self.authors
