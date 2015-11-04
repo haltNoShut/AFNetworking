@@ -13,8 +13,8 @@ module Fastlane
     class BuildCarthageFrameworksAction < Action
       def self.run(params)
 
-        sh("carthage build --no-skip-current")
-        sh("carthage archive #{params[:framework_name]}")
+        Actions.sh("carthage build --no-skip-current")
+        Actions.sh("carthage archive #{params[:framework_name]}")
         
         # sh "shellcommand ./path"
 
@@ -22,7 +22,7 @@ module Fastlane
 
         Actions.lane_context[SharedValues::CARTHAGE_FRAMEWORK] = path
         
-        puts "Carthage generated #{params[:framework_name]}.framework"
+        Helper.log.info "Carthage generated #{params[:framework_name]}.framework"
         
         return path
       end

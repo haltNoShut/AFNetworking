@@ -79,7 +79,7 @@ module Fastlane
           replace(params[:changelog_file_path], /^#{params[:changelog_file_delimiter]}/mi) do |match| 
             "#{match} #{changelog}"
           end
-          puts "#{params[:changelog_file_path]} has been updated for #{params[:milestone]}".green
+          Helper.log.info "#{params[:changelog_file_path]} has been updated for #{params[:milestone]}".green
           
         end
         
@@ -142,7 +142,10 @@ module Fastlane
                                        env_name: "FL_GENERATE_GITHUB_MILESTONE_CHANGELOG_FILE_PATH",
                                        description: "Path for the changelog",
                                        is_string: true,
-                                       optional: true),
+                                       optional: true,
+                                       verify_block: proc do |value|
+                                         raise "Couldn't find file at path '#{value}'".red unless File.exist?(value)
+                                       end),
           FastlaneCore::ConfigItem.new(key: :changelog_file_delimiter,
                                        env_name: "FL_GENERATE_GITHUB_MILESTONE_CHANGELOG_FILE_DELIMITER",
                                        description: "The delimiter indicating where to insert the changelog for the milestone in the changelog file",
