@@ -11,23 +11,23 @@ module Fastlane
       def self.run(params)
         commands = ["pod", "spec", "lint"]
         if params[:path]
-          commands >> params[:path]
+          commands << params[:path]
         end
         
         if params[:quick]
-          commands >> "--quick"
+          commands << "--quick"
         end
         
         if params[:allow_warnings]
-          commands >> "--allow-warnings"
+          commands << "--allow-warnings"
         end
         
         if params[:no_subspecs]
-          commands >> "--no-subspecs"
+          commands << "--no-subspecs"
         end
         
         if params[:subspec]
-          commands >> "--subspec=#{params[:subspec]}"
+          commands << "--subspec=#{params[:subspec]}"
         end
 
         result = Actions.sh("#{commands.join(" ")}")

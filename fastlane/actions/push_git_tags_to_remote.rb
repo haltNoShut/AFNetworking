@@ -5,13 +5,14 @@ module Fastlane
           commands = ["git", "push"]
             
           if params[:remote]
-            commands >> params[:remote]
+            commands << "#{params[:remote]}"
           end
-          commands >> "--tags"
+
+          commands << "--tags"
 
           result = Actions.sh("#{commands.join(" ")}")
           Helper.log.info "Tags pushed to remote".green
-          result
+          return result
         end
 
         #####################################################
