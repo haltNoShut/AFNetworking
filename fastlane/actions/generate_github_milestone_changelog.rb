@@ -27,9 +27,9 @@ module Fastlane
         url = "https://api.github.com/search/issues?q=repo%3A#{params[:github_organization]}%2F#{params[:github_repository]}+milestone%3A#{params[:milestone]}+state%3Aclosed"
         
         begin
-          result = Net::HTTP.get(URI(url))
+          response = Net::HTTP.get(URI(url))
           begin
-            result = JSON.parse(result) # try to parse and see if it's valid JSON data
+            response = JSON.parse(response) # try to parse and see if it's valid JSON data
           rescue
             # never mind, using standard text data instead
           end
@@ -37,9 +37,9 @@ module Fastlane
           raise "Error fetching remote file: #{ex}"
         end
         
-        items = result["items"]
+        items = response["items"]
         
-        if items.count == 0
+        if items.count == 0 && params[:allow_empty_changelog] == false
           raise "No closed issues found for #{params[:milestone]} in #{params[:github_organization]}/#{params[:github_repository]}".red
         end
 
@@ -64,6 +64,7 @@ module Fastlane
         
         
         date = DateTime.now
+        result = Hash.new
         result[:header] = "\n\n##[#{params[:milestone]}](https://github.com/#{params[:github_organization]}/#{params[:github_repository]}/releases/tag/#{params[:milestone]}) (#{date.strftime("%m/%d/%Y")})"
         result[:header] << "\nReleased on #{date.strftime("%A, %B %d, %Y")}. All issues associated with this milestone can be found using this [filter](https://github.com/#{params[:github_organization]}/#{params[:github_repository]}/issues?q=milestone%3A#{params[:milestone]}+is%3Aclosed)."
         
@@ -127,7 +128,12 @@ module Fastlane
                                        env_name: "FL_GENERATE_GITHUB_MILESTONE_CHANGELOG_REMOVED_LABEL_NAME",
                                        description: "Github label name for all removed added during this milestone",
                                        is_string: true,
-                                       default_value: "Removed")                                      
+                                       default_value: "Removed"),
+          FastlaneCore::ConfigItem.new(key: :allow_empty_changelog,
+                                       env_name: "FL_GENERATE_GITHUB_MILESTONE_CHANGELOG_ALLOW_EMPTY",
+                                       description: "Flag which allows an empty changelog. If false, exception is raised if no issues are found",
+                                       is_string: false,
+                                       default_value: true)                                       
         ]
       end
 
