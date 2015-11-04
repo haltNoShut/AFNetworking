@@ -2,17 +2,15 @@ module Fastlane
   module Actions
     class PushGitTagsToRemoteAction < Action
       def self.run(params)
-          command = [
-            'git',
-            'push']
+          commands = ["git", "push"]
             
           if params[:remote]
-            command >> params[:remote]
+            commands >> params[:remote]
           end
-          command >> '--tags'
+          commands >> "--tags"
 
-          result = Actions.sh(command.join(' '))
-          Helper.log.info 'Tags pushed to remote'.green
+          result = Actions.sh("#{commands.join(" ")}")
+          Helper.log.info "Tags pushed to remote".green
           result
         end
 
