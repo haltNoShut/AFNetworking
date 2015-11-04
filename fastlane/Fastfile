@@ -146,8 +146,14 @@ lane :prepare_framework_release do |options|
 end
 
 lane :complete_framework_release do |options|
+  if options[:skip_ci_check] != true
+    if !is_ci
+      raise "#{lane_context[SharedValues::LANE_NAME]} should be run from a CI machine. If you want to override this, pass 'skip_ci_check:true'".red
+    end
+  end
+  
   if !options[:version]
-    raise "No version specified!".red
+    raise "No version specified! Use 'version:VERSION_NUMBER'".red
   end
   
   #Ensure clean branch
