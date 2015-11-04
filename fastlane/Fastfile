@@ -123,7 +123,7 @@ lane :prepare_framework_release do |options|
     
     # tag the repo  
     add_git_tag(
-      tag: "-a #{options[:version]}"
+      tag: "#{options[:version]}"
     )
   
     # push the tag
