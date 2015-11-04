@@ -189,16 +189,29 @@ lane :complete_framework_release do |options|
   # Create a release
     #* Upload Notes
     #* Upload Carthage Asset
+    
+  if options[:github_organization]
+    organization = options[:github_organization]
+  elsif ENV["DEPLOY_GITHUB_ORGANIZATION"]
+    organization = ENV["DEPLOY_GITHUB_ORGANIZATION"]
+  end
+  
+  if options[:github_repository]
+    repository = options[:github_repository]
+  elsif ENV["DEPLOY_GITHUB_REPOSITORY"]
+    repository = ENV["DEPLOY_GITHUB_REPOSITORY"]
+  end
+  
   if options[:skip_github_release] != true
     changelog = generate_github_milestone_changelog(
-      github_organization: ENV["DEPLOY_GITHUB_ORGANIZATION"],
-      github_repository: ENV["DEPLOY_GITHUB_REPOSITORY"],
+      github_organization: organization,
+      github_repository: repository,
       milestone: options[:version]
     )
     
     if lane_context[SharedValues::CARTHAGE_FRAMEWORK]
       set_github_release(
-        respository_name:"#{ENV["DEPLOY_GITHUB_ORGANIZATION"]}/#{ENV["DEPLOY_GITHUB_REPOSITORY"]}",
+        respository_name:"#{organization}/#{respository}",
         api_token:params[:api_token],
         tag_name:params[:version],
         description: changelog[:changelog],
@@ -206,7 +219,7 @@ lane :complete_framework_release do |options|
       )
     else
       set_github_release(
-        respository_name:"#{ENV["DEPLOY_GITHUB_ORGANIZATION"]}/#{ENV["DEPLOY_GITHUB_REPOSITORY"]}",
+        respository_name:"#{organization}/#{respository}",
         api_token:params[:api_token],
         tag_name:params[:version],
         description: changelog[:changelog]
