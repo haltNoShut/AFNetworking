@@ -102,7 +102,7 @@ lane :prepare_framework_release do |options|
     )
     
     insert_text_into_file(
-      file_path: ENV["DEPLOY_CHANGELOG_PATH"]
+      file_path: ENV["DEPLOY_CHANGELOG_PATH"],
       text: changelog[:header] + changelog[:changelog],
       insert_delimeter: ENV["DEPLOY_CHANGELOG_DELIMTER"]
     )
