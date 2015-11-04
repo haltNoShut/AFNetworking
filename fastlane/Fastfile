@@ -217,7 +217,7 @@ lane :complete_framework_release do |options|
     
     if lane_context[SharedValues::CARTHAGE_FRAMEWORK]
       set_github_release(
-        respository_name:"#{organization}/#{respository}",
+        repository_name:"#{organization}/#{respository}",
         api_token:params[:api_token],
         tag_name:params[:version],
         description: changelog[:changelog],
