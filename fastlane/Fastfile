@@ -218,16 +218,16 @@ lane :complete_framework_release do |options|
     if lane_context[SharedValues::CARTHAGE_FRAMEWORK]
       set_github_release(
         repository_name:"#{organization}/#{repository}",
-        api_token:params[:api_token],
-        tag_name:params[:version],
+        api_token:options[:api_token],
+        tag_name:options[:version],
         description: changelog[:changelog],
         upload_assets: [lane_context[SharedValues::CARTHAGE_FRAMEWORK]]
       )
     else
       set_github_release(
         repository_name:"#{organization}/#{repository}",
-        api_token:params[:api_token],
-        tag_name:params[:version],
+        api_token:options[:api_token],
+        tag_name:options[:version],
         description: changelog[:changelog]
       )
     end
